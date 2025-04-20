@@ -334,6 +334,15 @@ export default function Home() {
         try {
           let tx;
           if (tokenAddr) {
+            if (!publicClient) {
+              setToastError('Public client not ready');
+              setLoadingToolCalls(prev => {
+                const arr = prev.map(inner => [...inner]);
+                if (arr[msgIdx]) arr[msgIdx][callIdx] = false;
+                return arr;
+              });
+              return;
+            }
             const decimals = await publicClient.readContract({
               address: tokenAddr as `0x${string}`,
               abi: erc20Abi,
