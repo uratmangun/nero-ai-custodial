@@ -49,6 +49,50 @@ export async function POST(request: Request) {
             additionalProperties: false,
           },
         },
+      },
+      {
+        type: "function",
+        function: {
+          name: "mint_test_token",
+          description: "Mint test tokens to the connected wallet.",
+          parameters: {
+            type: "object",
+            properties: {
+              amount: {
+                type: "string",
+                description: "Amount of test tokens to mint."
+              }
+            },
+            required: ["amount"],
+            additionalProperties: false,
+          },
+        },
+      },
+      {
+        type: "function",
+        function: {
+          name: "transfer",
+          description: "Transfer tokens or ETH to a specified address.",
+          parameters: {
+            type: "object",
+            properties: {
+              address: {
+                type: "string",
+                description: "Recipient address."
+              },
+              amount: {
+                type: "string",
+                description: "Amount to transfer."
+              },
+              token_name: {
+                type: "string",
+                description: "Optional ERC-20 token name."
+              }
+            },
+            required: ["address", "amount"],
+            additionalProperties: false,
+          },
+        },
       }
     ];
     const systemMessage = {
@@ -56,8 +100,10 @@ export async function POST(request: Request) {
       content: `This chatbot is intended solely for interacting with the Base Ethereum and Base Sepolia networks.
 Available tool calls:
   - check_address: Get the connected wallet address.
-  - check_balance: Get the balance of the connected wallet or specified token.
+  - check_balance: Get the balance of the connected wallet optional address (string).
   - faucet: Show the faucet URL for obtaining testnet tokens.
+  - mint_test_token: Mint test tokens to the connected wallet. Requires parameter: amount (number).
+  - transfer: Transfer tokens or ETH to a specified address. Requires parameters: address (string), amount (string), and optional token_name (string).
 
 If a question falls outside these tools, respond with list of the tools they can use and their descriptions.`,
     };

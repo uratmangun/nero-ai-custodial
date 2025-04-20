@@ -3,8 +3,9 @@ import React, { useState, useRef, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { useRouter } from 'next/navigation';
-import { useAccount, useChainId, useConfig, usePublicClient } from 'wagmi';
-import { erc20Abi,formatUnits } from 'viem'
+import { useAccount, useChainId, useConfig, usePublicClient,useWriteContract } from 'wagmi';
+import { erc20Abi,formatUnits, parseEther, parseUnits } from 'viem'
+
 const NERO_CHAIN_PARAMS = {
   chainId: '0x2b1', // 689 in hex
   chainName: 'NERO Chain Testnet',
@@ -40,7 +41,7 @@ export default function Home() {
   const chainId = useChainId()
   const config = useConfig()
   const publicClient = usePublicClient({ chainId })
- 
+  const { writeContractAsync } = useWriteContract();
   const truncateMiddle = (str: string, start = 6, end = 4) => {
     if (str.length <= start + end) return str;
     return `${str.slice(0, start)}...${str.slice(str.length - end)}`;
@@ -194,9 +195,7 @@ export default function Home() {
           return;
         }
         const args = tc.function?.arguments ? JSON.parse(tc.function.arguments) : {};
-        const tokenAddress = args.tokenAddress;
         const addressParam = args.address || address;
-        const nextPage = args.next_page;
         const lines: string[] = [];
         if (!addressParam) {
           lines.push('No address available');
@@ -241,6 +240,140 @@ export default function Home() {
         setToolCalls(prev => [...prev, []]);
         setRespondedToolCalls(prev => [...prev, []]);
         setLoadingToolCalls(prev => [...prev, []]);
+      } else if (toolName === 'mint_test_token') {
+        if (!isConnected || !address) {
+          setToastError('Please connect to a wallet first');
+          return;
+        }
+        const args = tc.function?.arguments ? JSON.parse(tc.function.arguments) : {};
+        const amount = args.amount;
+        if (!amount || isNaN(amount) || amount <= 0) {
+          setToastError('Please provide a valid amount to mint.');
+          setLoadingToolCalls(prev => {
+            const arr = prev.map(inner => [...inner]);
+            if (arr[msgIdx]) arr[msgIdx][callIdx] = false;
+            return arr;
+          });
+          return;
+        }
+        const mintAbi = [
+          {
+            name: 'mint',
+            type: 'function',
+            stateMutability: 'nonpayable',
+            inputs: [
+              { name: 'to', type: 'address' },
+              { name: 'amount', type: 'uint256' },
+            ],
+            outputs: [],
+          },
+        ] as const;
+        try {
+          const tx = await writeContractAsync({
+            address: "0xA919e465871871F2D1da94BccAF3acaF9609D968",
+            abi: mintAbi,
+            functionName: 'mint',
+            args: [address, parseEther(amount.toString())],
+          });
+          setMessages(prev => [...prev, `Transaction hash: [${tx}](https://testnet.neroscan.io/tx/${tx})`]);
+          setMessageRoles(prev => [...prev, 'tool']);
+          setMessageToolCallIds(prev => [...prev, tc.id]);
+          setIsUserMessage(prev => [...prev, false]);
+          setUsernames(prev => [...prev, 'ai assistant']);
+          setDates(prev => [...prev, formatDate(new Date())]);
+          setTimestamps(prev => [...prev, new Date().toLocaleTimeString()]);
+          setToolCalls(prev => [...prev, []]);
+          setRespondedToolCalls(prev => [...prev, []]);
+          setLoadingToolCalls(prev => [...prev, []]);
+        } catch (err) {
+          setToastError('Minting failed: ' + (err instanceof Error ? err.message : 'Unknown error'));
+          setLoadingToolCalls(prev => {
+            const arr = prev.map(inner => [...inner]);
+            if (arr[msgIdx]) arr[msgIdx][callIdx] = false;
+            return arr;
+          });
+        }
+      } else if (toolName === 'transfer') {
+        if (!isConnected || !address) {
+          setToastError('Please connect to a wallet first');
+          return;
+        }
+        const args = tc.function?.arguments ? JSON.parse(tc.function.arguments) : {};
+        const to = args.address;
+        const amount = args.amount;
+        const tokenName = args.token_name;
+        const tokenAddresses = [
+          { name: 'DAI', address: '0x5d0E342cCD1aD86a16BfBa26f404486940DBE345' },
+          { name: 'USDT', address: '0x1dA998CfaA0C044d7205A17308B20C7de1bdCf74' },
+          { name: 'USDC', address: '0xC86Fed58edF0981e927160C50ecB8a8B05B32fed' },
+          { name: 'TestToken', address: '0xA919e465871871F2D1da94BccAF3acaF9609D968' },
+        ];
+        let tokenAddr: string | undefined;
+        if (tokenName) {
+          const found = tokenAddresses.find(t => t.name.toLowerCase() === tokenName.toLowerCase());
+          if (!found) {
+            setToastError(`Unsupported token: ${tokenName}`);
+            setLoadingToolCalls(prev => {
+              const arr = prev.map(inner => [...inner]);
+              if (arr[msgIdx]) arr[msgIdx][callIdx] = false;
+              return arr;
+            });
+            return;
+          }
+          tokenAddr = found.address;
+        }
+        if (!to || !amount || isNaN(amount) || amount <= 0) {
+          setToastError('Please provide a valid address and amount to transfer.');
+          setLoadingToolCalls(prev => {
+            const arr = prev.map(inner => [...inner]);
+            if (arr[msgIdx]) arr[msgIdx][callIdx] = false;
+            return arr;
+          });
+          return;
+        }
+        try {
+          let tx;
+          if (tokenAddr) {
+            const decimals = await publicClient.readContract({
+              address: tokenAddr as `0x${string}`,
+              abi: erc20Abi,
+              functionName: 'decimals',
+            });
+            const parsedAmount = parseUnits(amount.toString(), Number(decimals));
+            const erc20TransferAbi = [
+              { name: 'transfer', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'to', type: 'address' }, { name: 'amount', type: 'uint256' }], outputs: [] }
+            ] as const;
+            tx = await writeContractAsync({
+              address: tokenAddr as `0x${string}`,
+              abi: erc20TransferAbi,
+              functionName: 'transfer',
+              args: [to, parsedAmount],
+            });
+          } else {
+            const valueHex = '0x' + parseEther(amount.toString()).toString(16);
+            tx = await (window as any).ethereum.request({
+              method: 'eth_sendTransaction',
+              params: [{ to, value: valueHex }],
+            });
+          }
+          setMessages(prev => [...prev, `Transaction hash: [${tx}](https://testnet.neroscan.io/tx/${tx})`]);
+          setMessageRoles(prev => [...prev, 'tool']);
+          setMessageToolCallIds(prev => [...prev, tc.id]);
+          setIsUserMessage(prev => [...prev, false]);
+          setUsernames(prev => [...prev, 'ai assistant']);
+          setDates(prev => [...prev, formatDate(new Date())]);
+          setTimestamps(prev => [...prev, new Date().toLocaleTimeString()]);
+          setToolCalls(prev => [...prev, []]);
+          setRespondedToolCalls(prev => [...prev, []]);
+          setLoadingToolCalls(prev => [...prev, []]);
+        } catch (err) {
+          setToastError('Transfer failed: ' + (err instanceof Error ? err.message : 'Unknown error'));
+          setLoadingToolCalls(prev => {
+            const arr = prev.map(inner => [...inner]);
+            if (arr[msgIdx]) arr[msgIdx][callIdx] = false;
+            return arr;
+          });
+        }
       } else {
         setToastError('Unsupported tool: ' + toolName);
       }
