@@ -254,13 +254,27 @@ export default function Home() {
       return;
     }
     try {
+      // attempt to switch if chain exists
       await (window as any).ethereum.request({
-        method: 'wallet_addEthereumChain',
-        params: [NERO_CHAIN_PARAMS],
+        method: 'wallet_switchEthereumChain',
+        params: [{ chainId: NERO_CHAIN_PARAMS.chainId }],
       });
-    } catch (err) {
-      console.log(err);
-      setToastError('Failed to add NERO Chain: ' + (err instanceof Error ? err.message : String(err)));
+    } catch (switchError: any) {
+      if (switchError.code === 4902) {
+        // chain not added, add it
+        try {
+          await (window as any).ethereum.request({
+            method: 'wallet_addEthereumChain',
+            params: [NERO_CHAIN_PARAMS],
+          });
+        } catch (addError: any) {
+          console.error(addError);
+          setToastError('Failed to add NERO Chain: ' + (addError instanceof Error ? addError.message : String(addError)));
+        }
+      } else {
+        console.error(switchError);
+        setToastError('Failed to switch to NERO Chain: ' + (switchError instanceof Error ? switchError.message : String(switchError)));
+      }
     }
   };
 
@@ -268,8 +282,6 @@ export default function Home() {
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
-
-  const showAddChainButton = isConnected;
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-start p-4">
@@ -282,9 +294,14 @@ export default function Home() {
         </div>
       )}
       <h1 className="text-3xl font-bold mb-6">Nero AI custodial wallet</h1>
-      <div className="mb-6 flex items-center justify-center space-x-4">
+      <div className="mb-6 flex flex-col items-center justify-center">
         <ConnectButton />
-      
+        <button
+          className="btn btn-sm btn-primary mt-2"
+          onClick={addNeroChain}
+        >
+          Add NERO Chain to wallet
+        </button>
       </div>
       <div className="w-full max-w-full mb-6">
         <div className="border border-base-content/20 rounded p-4 h-[80vh] overflow-y-auto bg-white w-full">
