@@ -1,27 +1,25 @@
-# Nero AI custodial web
+# Nero AI Custodial Web
 
-An AI-powered chat interface built with Next.js that lets you query and interact with the Base and Base Sepolia blockchains. It leverages the Zora Coins SDK to fetch on-chain data (balances, top gainers, coin details, and comments) and defines tool functions (switch_chain, current_chain, check_address, check_balance, get_coin_top_gainers, check_coin, get_coin_comment). Responses are formatted with human-readable ETH units, markdown previews, and paginated comments with user handles and timestamps. The application runs in Docker using pnpm and is publicly accessible via a Cloudflare Tunnel.
+The NERO AI Custodial Wallet is an AI-powered chat interface built on Next.js, enabling users to manage NERO blockchain assets through natural language. Users can connect custodial wallets, query balances, initiate transfers, and inspect token details on NERO chain via tool functions.
 
 # Web demo
-https://instant-grid-removing-accessible.trycloudflare.com/
+https://lcd-purchases-subaru-trembl.trycloudflare.com/
 
 # Video demo
-https://youtu.be/XgQppscv380
+https://youtu.be/1ukIsK-wnzQ
 
 # List of tools
- - `switch_chain`: Switch between Ethereum blockchains. Default is `baseSepolia`.
- - `current_chain`: Get the current active blockchain chain.
  - `check_address`: Get the connected wallet address.
- - `check_balance`: Get the balance of the connected wallet or specified ERC-20 token. Optional parameters:
-   - `address` (string): user or token contract address.
-   - `next_page` (string): pagination cursor.
- - `get_coin_top_gainers`: Get the top gaining coins on Zora. Optional parameter:
-   - `next_page` (string): pagination cursor.
- - `check_coin`: Get details for a single coin by its address. Optional parameter:
-   - `chainId` ("base" | "baseSepolia"): chain to query (default is `base`).
- - `get_coin_comment`: Get comments for a single coin by its address. Optional parameters:
-   - `chain` ("base" | "baseSepolia"): chain to query (default is `base`).
-   - `next_page` (string): pagination cursor.
+ - `check_balance`: Get the balance of the connected wallet or an ERC-20 token if an address is provided.
+   - `address` (string, optional): user address.
+ - `faucet`: Show the faucet URL for obtaining testnet tokens.
+ - `mint_test_token`: Mint test tokens to the connected wallet.
+   - `amount` (string): amount of test tokens to mint in NERO.
+ - `transfer`: Transfer tokens or ETH to a specified address.
+   - `address` (string): recipient address.
+   - `amount` (string): amount to transfer.
+   - `token_name` (string, optional): ERC-20 token name.
+
 # How to run with docker
 
 ## Prerequisites
@@ -30,28 +28,28 @@ https://youtu.be/XgQppscv380
 ## Build and Start
 1. Build the Docker image:
     ```fish
-    docker build -t ai-custodial-web .
+    docker build -t nero-ai-custodial-web .
     ```
 2. Create (or reuse) a Docker network for the tunnel:
     ```fish
-    docker network create cf-net
+    docker network create nero-net
     ```
-3. Run your Next.js app container on `cf-net`:
+3. Run your Next.js app container on `nero-net`:
     ```fish
     docker run -d \
-      --network cf-net \
+      --network nero-net \
       --env-file .env \
-      --name ai-custodial-web \
-      ai-custodial-web
+      --name nero-ai-custodial-web \
+      nero-ai-custodial-web
     ```
 4. Run the Cloudflare Tunnel on the same network:
     ```fish
     docker run -d \
-      --network cf-net \
-      --name cf-tunnel \
-      cloudflare/cloudflared:latest tunnel --url http://ai-custodial-web:3000
+      --network nero-net \
+      --name nero-ai-custodial-tunnel \
+      cloudflare/cloudflared:latest tunnel --url http://nero-ai-custodial-web:3000
     ```
 5. Check the tunnel logs for your public URL:
     ```fish
-    docker logs -f cf-tunnel
+    docker logs -f nero-ai-custodial-tunnel
     ```

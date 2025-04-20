@@ -274,6 +274,7 @@ export default function Home() {
             abi: mintAbi,
             functionName: 'mint',
             args: [address, parseEther(amount.toString())],
+            gas: 21000n,
           });
           setMessages(prev => [...prev, `Transaction hash: [${tx}](https://testnet.neroscan.io/tx/${tx})`]);
           setMessageRoles(prev => [...prev, 'tool']);
@@ -357,6 +358,7 @@ export default function Home() {
               abi: erc20TransferAbi,
               functionName: 'transfer',
               args: [to, parsedAmount],
+              gas: 21000n,
             });
           } else {
             const valueHex = '0x' + parseEther(amount.toString()).toString(16);
