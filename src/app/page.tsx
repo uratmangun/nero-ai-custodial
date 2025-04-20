@@ -3,11 +3,8 @@ import React, { useState, useRef, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { useRouter } from 'next/navigation';
-import { useAccount,useChainId, useConfig, useSwitchChain } from 'wagmi';
-import { formatEther } from 'viem'
-import { getPublicClient } from 'wagmi/actions'
-import { getCoinsTopGainers,getProfileBalances,getCoin,getCoinComments } from "@zoralabs/coins-sdk";
-
+import { useAccount, useChainId, useConfig, usePublicClient } from 'wagmi';
+import { erc20Abi,formatUnits } from 'viem'
 const NERO_CHAIN_PARAMS = {
   chainId: '0x2b1', // 689 in hex
   chainName: 'NERO Chain Testnet',
@@ -42,17 +39,42 @@ export default function Home() {
   const { address, isConnected } = useAccount();
   const chainId = useChainId()
   const config = useConfig()
-  const chain = config.chains.find((c) => c.id === chainId)
-  const publicClient = getPublicClient(config, { chainId })
-  const { switchChain } = useSwitchChain()
+  const publicClient = usePublicClient({ chainId })
+ 
   const truncateMiddle = (str: string, start = 6, end = 4) => {
     if (str.length <= start + end) return str;
     return `${str.slice(0, start)}...${str.slice(str.length - end)}`;
   };
-  async function getBalance(address: `0x${string}`) {
-    if (!publicClient) return null;
-    const balance = await publicClient.getBalance({ address })
-    return formatEther(balance)
+  async function getBalance(walletAddress: `0x${string}`, tokenAddress?: `0x${string}`) {
+    if (!publicClient) {
+      throw new Error("Public client not ready");
+    }
+    if (!tokenAddress) {
+      const nativeBalance = await publicClient.getBalance({ address: walletAddress });
+      return formatUnits(nativeBalance, 18);
+    }
+    const [decimals, balance] = await Promise.all([
+      publicClient.readContract({
+        address: tokenAddress,
+        abi: erc20Abi,
+        functionName: 'decimals',
+      }),
+      publicClient.readContract({
+        address: tokenAddress,
+        abi: erc20Abi,
+        functionName: 'balanceOf',
+        args: [walletAddress],
+      }),
+    ]);
+
+    if (decimals === undefined || balance === undefined) {
+      console.error("Failed to fetch contract values", { decimals, balance });
+      return "0";
+    }
+
+    const formattedBalance = formatUnits(balance, decimals);
+    console.log(`Formatted Balance: ${formattedBalance}`);
+    return formattedBalance;
   }
   const formatDate = (date: Date): string => {
     const d = date.getDate().toString().padStart(2, '0');
@@ -172,32 +194,44 @@ export default function Home() {
           return;
         }
         const args = tc.function?.arguments ? JSON.parse(tc.function.arguments) : {};
+        const tokenAddress = args.tokenAddress;
         const addressParam = args.address || address;
         const nextPage = args.next_page;
-        const balance = await getBalance(addressParam);
-        const response = await getProfileBalances({ identifier: addressParam, count: 20, after: nextPage });
-        const profile: any = response.data?.profile;
-        const coinBalances = profile.coinBalances?.edges || [];
-        const pageInfo = profile.coinBalances?.pageInfo;
         const lines: string[] = [];
-        lines.push(addressParam
-          ? `Balance for ${addressParam === address ? 'your wallet' : addressParam}: ${balance} ETH`
-          : 'No address available');
-        if (chainId !== 8453) {
-          lines.push('Please switch to base chain to see full list of zora coin balances');
+        if (!addressParam) {
+          lines.push('No address available');
         } else {
-          lines.push(`Found ${coinBalances.length} coin balances:`);
-          coinBalances.forEach((item: any, idx: number) => {
-            const bal = item.node;
-            lines.push(`${idx + 1}. ${bal.coin?.name || 'Unknown'} (${bal.coin?.symbol || 'N/A'})`);
-            lines.push(`   Balance: ${Number(bal.balance) / 1e18} ${bal.coin?.symbol || 'N/A'}`);
-            lines.push(`   Token address: ${bal.coin?.address || 'N/A'}`);
-            lines.push('-----------------------------------');
-          });
-          if (pageInfo?.endCursor) lines.push(`Next page cursor: ${pageInfo.endCursor}`);
+          lines.push(`Balances for ${addressParam === address ? 'your wallet' : addressParam}:`);
+          // Native token
+          const nativeBalance = await getBalance(addressParam);
+          lines.push(`NERO: ${nativeBalance}`);
+          // ERC20 tokens
+          const tokenAddresses = [
+            { name: 'DAI', address: '0x5d0E342cCD1aD86a16BfBa26f404486940DBE345' },
+            { name: 'USDT', address: '0x1dA998CfaA0C044d7205A17308B20C7de1bdCf74' },
+            { name: 'USDC', address: '0xC86Fed58edF0981e927160C50ecB8a8B05B32fed' },
+            { name: 'TestToken', address: '0xA919e465871871F2D1da94BccAF3acaF9609D968' },
+          ];
+          for (const token of tokenAddresses) {
+            const tokenBal = await getBalance(addressParam, token.address as `0x${string}`);
+            lines.push(`${token.name}: ${tokenBal}`);
+          }
         }
         const display = lines.join('\n');
         setMessages(prev => [...prev, display]);
+        setMessageRoles(prev => [...prev, 'tool']);
+        setMessageToolCallIds(prev => [...prev, tc.id]);
+        setIsUserMessage(prev => [...prev, false]);
+        setUsernames(prev => [...prev, 'ai assistant']);
+        setDates(prev => [...prev, formatDate(new Date())]);
+        setTimestamps(prev => [...prev, new Date().toLocaleTimeString()]);
+        setToolCalls(prev => [...prev, []]);
+        setRespondedToolCalls(prev => [...prev, []]);
+        setLoadingToolCalls(prev => [...prev, []]);
+      } else if (toolName === 'faucet') {
+        // Show the faucet URL (customize the URL as needed)
+        const faucetUrl = 'https://app.testnet.nerochain.io/faucet/' // <-- update if you have a different faucet
+        setMessages(prev => [...prev, `faucet url: [https://app.testnet.nerochain.io/faucet/](${faucetUrl})`]);
         setMessageRoles(prev => [...prev, 'tool']);
         setMessageToolCallIds(prev => [...prev, tc.id]);
         setIsUserMessage(prev => [...prev, false]);

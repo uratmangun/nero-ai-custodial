@@ -37,6 +37,18 @@ export async function POST(request: Request) {
             additionalProperties: false,
           },
         },
+      },
+      {
+        type: "function",
+        function: {
+          name: "faucet",
+          description: "Show the faucet URL.",
+          parameters: {
+            type: "object",
+            properties: {},
+            additionalProperties: false,
+          },
+        },
       }
     ];
     const systemMessage = {
@@ -45,6 +57,7 @@ export async function POST(request: Request) {
 Available tool calls:
   - check_address: Get the connected wallet address.
   - check_balance: Get the balance of the connected wallet or specified token.
+  - faucet: Show the faucet URL for obtaining testnet tokens.
 
 If a question falls outside these tools, respond with list of the tools they can use and their descriptions.`,
     };
