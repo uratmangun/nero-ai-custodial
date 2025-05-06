@@ -9,9 +9,11 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@neardefi/shade-agent-js": "^0.0.12",
     "@rainbow-me/rainbowkit": "^2.2.4",
     "@tanstack/react-query": "^5.74.4",
     "@zoralabs/coins-sdk": "^0.0.8",
+    "agent-twitter-client": "^0.0.18",
     "daisyui": "^5.0.20",
     "ky": "^1.8.1",
     "lokijs": "^1.5.12",

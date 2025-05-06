@@ -34,6 +34,9 @@ yarn-error.log*
 .env*
 !.env.example
 
+# local env files from shade-agent-basednames (if different)
+.env*.local
+
 # vercel
 .vercel
 
@@ -41,4 +44,12 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# contract
+contract/target
+
+# Data directory (specific to nero-ai-custodial)
 /data
+
+# Other files from shade-agent-basednames
+refunds.csv
+utils/log.js

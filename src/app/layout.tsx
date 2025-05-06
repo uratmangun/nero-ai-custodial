@@ -14,27 +14,27 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Mother Agents Battle Royale",
-  description: "Vote in epic head-to-head battles and crown the most legendary AI personality!",
-  keywords: ["twitter", "video", "player", "downloader", "social media"],
-  authors: [{ name: "Twitter Player Team" }],
+  title: "Nero AI Custodial Wallet",
+  description: "Manage your Nero blockchain assets using natural language with an AI-powered interface. Enjoy gasless transactions and interact via Twitter/X bot.",
+  keywords: ["nero", "blockchain", "ai", "custodial", "wallet", "chatbot", "web3", "gasless", "twitter", "bot"],
+  authors: [{ name: "Nero AI Team" }],
   category: "Technology",
   openGraph: {
-    title: "Mother Agents Battle Royale",
-    description: "Vote in epic head-to-head battles and crown the most legendary AI personality!",
+    title: "Nero AI Custodial Wallet",
+    description: "Manage your Nero blockchain assets using natural language with an AI-powered interface.",
     type: "website",
     locale: "en_US",
-    siteName: "Twitter Player",
+    siteName: "Nero AI Custodial Wallet",
   },
   twitter: {
     card: "player",
-    title: "Mother Agents Battle Royale",
-    description: "Vote in epic head-to-head battles and crown the most legendary AI personality!",
-    creator: "@twitterplayer",
-    site: "@hellomother_ai",
+    title: "Nero AI Custodial Wallet",
+    description: "Interact with your Nero wallet using AI! Features gasless transactions and a Twitter bot (@bankrextension0).",
+    creator: "@bankrextension0",
+    site: "@bankrextension0",
     images: ["https://closing-elf-internal.ngrok-free.app/auth/twitter/asset/MotherLogo.jpg"],
     players: [{
-      playerUrl: "https://sacred-eagle-rm-silver.trycloudflare.com",
+      playerUrl: "https://sacred-eagle-rm-silver.trycloudflare.com", 
       streamUrl: "",
       width: 480,
       height: 480
