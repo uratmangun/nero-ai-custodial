@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 
 // TODO: Implement refund logic
 
-export async function POST(request) {
+export async function POST(request: Request) { // Added Request type
   try {
     // const { recipient, amount, reason } = await request.json(); // Example parameters
 
@@ -14,6 +14,6 @@ export async function POST(request) {
 
   } catch (error) {
     console.error('Error processing refund:', error);
-    return NextResponse.json({ error: 'Failed to process refund' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to process refund', details: error instanceof Error ? error.message : String(error) }, { status: 500 });
   }
 } 

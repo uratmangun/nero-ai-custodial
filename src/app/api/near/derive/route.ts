@@ -4,7 +4,7 @@ import { getAccountFromSeedPhrase } from '../../../lib/near';
 import { mnemonicGenerate } from '@polkadot/util-crypto';
 import { NextResponse } from 'next/server';
 
-export async function GET(request) { // Assuming GET method is appropriate
+export async function GET(request: Request) { // Added Request type
   try {
     const mnemonic = mnemonicGenerate();
     // This function needs to exist in the target project
