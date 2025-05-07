@@ -49,6 +49,7 @@ contract/target
 
 # Data directory (specific to nero-ai-custodial)
 /data
+/coba/data
 
 # Other files from shade-agent-basednames
 refunds.csv
